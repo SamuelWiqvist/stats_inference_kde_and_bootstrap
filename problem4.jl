@@ -1,6 +1,7 @@
 # load packages
 using PyPlot
 using RDatasets
+using Statistics
 
 # load data
 data = dataset("MASS", "geyser")
@@ -49,7 +50,6 @@ PyPlot.plot(kde_grid, kde_est)
 # rejection sampling algortihm
 function rejectionsampling(p::Function, g::Function, sample::Function, M::Real, N::Int)
 
-
     samples = zeros(N)
 
     for i = 1:N
@@ -80,13 +80,40 @@ M = 0.05
 
 samples = @time rejectionsampling(p, g, sample, M, 10000)
 
-# task b) We use unifrom proposal dist on [40,110], we get 10000 samples in 0.05 sec. Hard to
-# find better prop dist since the kde is bimodal, could use a mixture of Gaussians but that
-# is too complicated for this simple problem
 
 PyPlot.figure()
 h = PyPlot.plt[:hist](samples, 100, density= true)
 PyPlot.plot(kde_grid, kde_est)
 
+# task b) We use unifrom proposal dist on [40,110], we get 10000 samples in 0.05 sec. Hard to
+# find better prop dist since the kde is bimodal, could use a mixture of Gaussians but that
+# is too complicated for this simple problem
 
-# task c) bootstrap confidence band of what? 
+
+# compute quantile bootstrap confidence band
+B = 100 # bootstrap sampels
+nbr_samples = length(waiting) # nbr of samples in each bootstrap sample
+
+# pre-allocated vectors
+samples = zeros(nbr_samples, B)
+kde_ests = zeros(length(kde_grid), B)
+kde_quantiles = zeros(2, length(kde_grid))
+
+# generate bootstrap samples
+for i = 1:B
+    samples[:,i] = rejectionsampling(p, g, sample, M, nbr_samples) # generate bootstrap sample
+    kde_ests[:,i] = kde(samples[:,i], kde_grid, k_uniform, bandwidth) # compute kde for bootstrap sample
+end
+
+# compute bootstrap quantiles for each point where we evalute the kde
+for i = 1:length(kde_grid)
+    kde_quantiles[:,i] = quantile(kde_ests[i,:], [0.025, 0.975])
+end
+
+# plot quantile bootstrap confidence band
+PyPlot.figure()
+PyPlot.plot(kde_grid, kde_est, "r")
+PyPlot.plot(kde_grid, kde_ests[:,4], "k")
+PyPlot.fill_between(kde_grid, kde_quantiles[1,:], kde_quantiles[2,:],alpha=0.5)
+
+# task c) the quantile bootstrap confidence band seem to be ok
