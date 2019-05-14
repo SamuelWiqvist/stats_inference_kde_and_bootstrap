@@ -130,4 +130,4 @@ PyPlot.savefig("fig/bootstrap_conf_band_upper_lower_for_maxima.png")
 
 
 
-# task c) the quantile bootstrap confidence band seem to be ok
+# task c) the quantile bootstrap confidence band seem to be ok, we have two sig maxima
